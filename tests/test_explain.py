@@ -6,6 +6,7 @@ import yaml
 from galaxy.jobs.mapper import JobMappingException
 
 from tpv.commands.dryrunner import TPVDryRunner
+from tpv.core.entities import SchedulingTags
 from tpv.core.explain import ExplainCollector, ExplainPhase
 
 
@@ -163,6 +164,46 @@ class TestExplainCollectorUnit(unittest.TestCase):
 
         reason = ExplainCollector.match_failure_reason(dest, entity)
         self.assertEqual(reason, "unknown reason")
+
+    def test_match_failure_reason_tag_mismatch_shows_categorized_tags(self):
+        """tag mismatch reasons should include categorized tags for entity and destination."""
+        dest = MagicMock()
+        dest.abstract = False
+        dest.max_accepted_cores = None
+        dest.max_accepted_mem = None
+        dest.max_accepted_gpus = None
+        dest.min_accepted_cores = None
+        dest.min_accepted_mem = None
+        dest.min_accepted_gpus = None
+        dest.tpv_dest_tags = SchedulingTags(
+            require=["training"],
+            prefer=["docker"],
+            accept=["slurm"],
+            reject=["legacy"],
+        )
+
+        entity = MagicMock()
+        entity.cores = None
+        entity.mem = None
+        entity.gpus = None
+        entity.tpv_tags = SchedulingTags(
+            require=["pulsar"],
+            prefer=["interactive"],
+            accept=["tool_type_user_defined"],
+            reject=["offline"],
+        )
+
+        reason = ExplainCollector.match_failure_reason(dest, entity)
+        self.assertIn("tag mismatch", reason)
+        self.assertIn(
+            "entity tags: require=['pulsar'] prefer=['interactive'] "
+            "accept=['tool_type_user_defined'] reject=['offline']",
+            reason,
+        )
+        self.assertIn(
+            "dest tags: require=['training'] prefer=['docker'] accept=['slurm'] reject=['legacy']",
+            reason,
+        )
 
 
 class TestDryRunExplain(unittest.TestCase):

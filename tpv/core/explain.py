@@ -172,8 +172,5 @@ class ExplainCollector:
         ):
             return f"gpus {entity.gpus} below min_accepted_gpus {dest.min_accepted_gpus}"
         if not entity.tpv_tags.match(dest.tpv_dest_tags):
-            return (
-                f"tag mismatch - entity requires {entity.tpv_tags.require}, rejects {entity.tpv_tags.reject} "
-                f"dest tags are {list(dest.tpv_dest_tags.all_tag_values())}"
-            )
+            return f"tag mismatch - entity tags: {entity.tpv_tags}\n" f"dest tags: {dest.tpv_dest_tags}"
         return "unknown reason"
