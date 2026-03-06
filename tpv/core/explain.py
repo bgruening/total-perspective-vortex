@@ -51,6 +51,44 @@ class ExplainCollector:
         """Retrieve the collector from a context dict, or None if not explaining."""
         return context.get(ExplainCollector.CONTEXT_KEY)
 
+    @staticmethod
+    def _abstract_destination_summary_step(destination_ids: list[str]) -> ExplainStep:
+        count = len(destination_ids)
+        noun = "destination" if count == 1 else "destinations"
+        ids = ", ".join(destination_ids[:5])
+        if count > 5:
+            ids = f"{ids}, ... ({count - 5} more)"
+        return ExplainStep(
+            phase=ExplainPhase.DESTINATION_MATCHING,
+            message=f"Skipped {count} abstract {noun}",
+            detail=f"ids: {ids}",
+        )
+
+    @staticmethod
+    def _destination_id_from_rejection_message(message: str) -> str:
+        return message.split(": REJECTED", 1)[0]
+
+    def _steps_for_output(self) -> list[ExplainStep]:
+        """Prepare explain steps for display-oriented output."""
+        output_steps: list[ExplainStep] = []
+        abstract_destination_ids: list[str] = []
+
+        for step in self.steps:
+            if step.phase == ExplainPhase.DESTINATION_MATCHING and step.detail == "destination is abstract":
+                abstract_destination_ids.append(self._destination_id_from_rejection_message(step.message))
+                continue
+
+            if abstract_destination_ids and step.phase != ExplainPhase.DESTINATION_MATCHING:
+                output_steps.append(self._abstract_destination_summary_step(abstract_destination_ids))
+                abstract_destination_ids = []
+
+            output_steps.append(step)
+
+        if abstract_destination_ids:
+            output_steps.append(self._abstract_destination_summary_step(abstract_destination_ids))
+
+        return output_steps
+
     def render(self) -> str:
         """Render the collected steps as structured, human-readable text."""
         buf = io.StringIO()
@@ -60,7 +98,7 @@ class ExplainCollector:
 
         current_phase = None
         step_num = 0
-        for step in self.steps:
+        for step in self._steps_for_output():
             if step.phase != current_phase:
                 current_phase = step.phase
                 buf.write(f"--- {current_phase.value} ---\n")
@@ -80,7 +118,7 @@ class ExplainCollector:
         current_phase = None
         phase_steps: list[dict[str, Any]] = []
 
-        for step in self.steps:
+        for step in self._steps_for_output():
             if step.phase != current_phase:
                 if current_phase is not None:
                     data["phases"][current_phase.value] = phase_steps

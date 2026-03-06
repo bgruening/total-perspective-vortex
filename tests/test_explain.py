@@ -109,6 +109,21 @@ class TestExplainCollectorUnit(unittest.TestCase):
         self.assertIn("        line2", output)
         self.assertIn("        line3", output)
 
+    def test_render_summarizes_abstract_destination_rejections(self):
+        collector = ExplainCollector()
+        collector.add_step(ExplainPhase.DESTINATION_MATCHING, "abstract_a: REJECTED", "destination is abstract")
+        collector.add_step(ExplainPhase.DESTINATION_MATCHING, "concrete_dest: REJECTED", "tag mismatch")
+        collector.add_step(ExplainPhase.DESTINATION_MATCHING, "abstract_b: REJECTED", "destination is abstract")
+        collector.add_step(ExplainPhase.FINAL_RESULT, "No destinations are available to fulfill request")
+
+        output = collector.render()
+
+        self.assertNotIn("abstract_a: REJECTED", output)
+        self.assertNotIn("abstract_b: REJECTED", output)
+        self.assertIn("concrete_dest: REJECTED", output)
+        self.assertIn("Skipped 2 abstract destinations", output)
+        self.assertIn("ids: abstract_a, abstract_b", output)
+
     def test_match_failure_reason_gpus_exceed_max(self):
         """match_failure_reason should report when gpu request exceeds max_accepted_gpus."""
         dest = MagicMock()
@@ -243,6 +258,22 @@ class TestDryRunExplain(unittest.TestCase):
 
         self.assertIn("REJECTED", trace)
         self.assertIn("MATCHED", trace)
+
+    def test_dry_run_explain_summarizes_abstract_destinations(self):
+        """Abstract destinations should be summarized, not listed as individual rejections."""
+        dry_runner = TPVDryRunner.from_params(
+            job_conf=self._fixture_path("job_conf_dry_run.yml"),
+            tool_id="tool_matching_abstract_dest",
+            tpv_confs=[self._fixture_path("mapping-destinations.yml")],
+            input_size=5,
+        )
+        destination, collector = dry_runner.run(explain=True)
+
+        self.assertIsNone(destination)
+        self.assertIsNotNone(collector)
+        trace = collector.render()
+        self.assertIn("Skipped 1 abstract destination", trace)
+        self.assertNotIn("destination is abstract", trace)
 
     def test_dry_run_explain_shows_destination_ranking(self):
         """Ranked destinations should show scores."""
