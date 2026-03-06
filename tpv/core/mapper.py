@@ -300,9 +300,7 @@ class EntityToDestinationMapper(object):
                 ExplainPhase.ENTITY_COMBINING,
                 f"Combining entities: {' + '.join(entity_names)}",
                 f"cores={combined_entity.cores}, mem={combined_entity.mem}, gpus={combined_entity.gpus}\n"
-                f"scheduling: require={combined_entity.tpv_tags.require}, "
-                f"prefer={combined_entity.tpv_tags.prefer}, "
-                f"reject={combined_entity.tpv_tags.reject}",
+                f"scheduling: {combined_entity.tpv_tags}",
             )
 
         # 3. Evaluate rules only, so that all expressions are collapsed into a flat entity. The final

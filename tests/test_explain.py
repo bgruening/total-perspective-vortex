@@ -197,6 +197,21 @@ class TestDryRunExplain(unittest.TestCase):
         self.assertIn("bwa", trace)
         self.assertIn("fairycake@vortex.org", trace)
 
+    def test_dry_run_explain_shows_combined_accept_tags(self):
+        """The entity combining section should include accept tag output."""
+        dry_runner = TPVDryRunner.from_params(
+            job_conf=self._fixture_path("job_conf_dry_run.yml"),
+            tool_id="bwa",
+            user_email="fairycake@vortex.org",
+            tpv_confs=[self._fixture_path("mapping-rules.yml")],
+            input_size=6,
+        )
+        _, collector = dry_runner.run(explain=True)
+        trace = collector.render()
+
+        self.assertIn("scheduling: require=", trace)
+        self.assertIn("accept=", trace)
+
     def test_dry_run_explain_shows_rules(self):
         """The trace should show rules with match/no-match status."""
         dry_runner = TPVDryRunner.from_params(
