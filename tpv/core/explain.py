@@ -68,24 +68,33 @@ class ExplainCollector:
     def _destination_id_from_rejection_message(message: str) -> str:
         return message.split(": REJECTED", 1)[0]
 
+    @staticmethod
+    def _is_abstract_destination_rejection(step: ExplainStep) -> bool:
+        return (
+            step.phase == ExplainPhase.DESTINATION_MATCHING
+            and step.detail == "destination is abstract"
+            and ": REJECTED" in step.message
+        )
+
     def _steps_for_output(self) -> list[ExplainStep]:
         """Prepare explain steps for display-oriented output."""
+        abstract_destination_ids = [
+            self._destination_id_from_rejection_message(step.message)
+            for step in self.steps
+            if self._is_abstract_destination_rejection(step)
+        ]
+        if not abstract_destination_ids:
+            return self.steps
+
         output_steps: list[ExplainStep] = []
-        abstract_destination_ids: list[str] = []
-
+        summary_inserted = False
         for step in self.steps:
-            if step.phase == ExplainPhase.DESTINATION_MATCHING and step.detail == "destination is abstract":
-                abstract_destination_ids.append(self._destination_id_from_rejection_message(step.message))
+            if self._is_abstract_destination_rejection(step):
+                if not summary_inserted:
+                    output_steps.append(self._abstract_destination_summary_step(abstract_destination_ids))
+                    summary_inserted = True
                 continue
-
-            if abstract_destination_ids and step.phase != ExplainPhase.DESTINATION_MATCHING:
-                output_steps.append(self._abstract_destination_summary_step(abstract_destination_ids))
-                abstract_destination_ids = []
-
             output_steps.append(step)
-
-        if abstract_destination_ids:
-            output_steps.append(self._abstract_destination_summary_step(abstract_destination_ids))
 
         return output_steps
 

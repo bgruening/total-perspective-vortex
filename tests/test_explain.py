@@ -124,6 +124,7 @@ class TestExplainCollectorUnit(unittest.TestCase):
         self.assertIn("concrete_dest: REJECTED", output)
         self.assertIn("Skipped 2 abstract destinations", output)
         self.assertIn("ids: abstract_a, abstract_b", output)
+        self.assertLess(output.index("Skipped 2 abstract destinations"), output.index("concrete_dest: REJECTED"))
 
     def test_match_failure_reason_gpus_exceed_max(self):
         """match_failure_reason should report when gpu request exceeds max_accepted_gpus."""
