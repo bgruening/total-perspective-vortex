@@ -8,7 +8,7 @@ mv hi.txt '$out_file1' &&
 echo "OOM_TOOL_MEMORY \$OOM_TOOL_MEMORY" &&
 if [[ -z \$OOM_TOOL_MEMORY ]]; then
     exit 1;
-fi && 
+fi &&
 if [ "\$OOM_TOOL_MEMORY" -lt 10 ]; then
     exit 42;
 else

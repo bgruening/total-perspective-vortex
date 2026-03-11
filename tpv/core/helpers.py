@@ -50,6 +50,9 @@ def input_size(job: Job) -> float:
 def weighted_random_sampling(destinations: list[Destination]) -> list[Destination]:
     if not destinations:
         return []
+    has_explicit_weight = any(d.params and "weight" in d.params for d in destinations)
+    if not has_explicit_weight:
+        return random.sample(destinations, k=len(destinations))
     rankings = [(d.params.get("weight", 1) if d.params else 1) for d in destinations]
     return random.choices(destinations, weights=rankings, k=len(destinations))
 

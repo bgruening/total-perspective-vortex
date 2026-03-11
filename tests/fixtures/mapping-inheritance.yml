@@ -93,5 +93,3 @@ destinations:
     scheduling:
       accept:
         - k8s-special
-
-

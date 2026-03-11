@@ -18,7 +18,7 @@ tools:
           helpers.concurrent_job_count_for_tool(app, tool, user) >= 2  # concurrent jobs per user
         execute: |
           from galaxy.jobs.mapper import JobNotReadyException
-          raise JobNotReadyException()          
+          raise JobNotReadyException()
   toolshed.g2.bx.psu.edu/repos/artbio/repenrich/repenrich/.*:
     rules:
       - if: |
