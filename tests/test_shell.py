@@ -56,6 +56,14 @@ class TPVShellTestCase(unittest.TestCase):
             f"Expected lint to be successful but output was: {output}",
         )
 
+    def test_lint_nested_resubmit_handler(self):
+        tpv_config = os.path.join(os.path.dirname(__file__), "fixtures/mapping-params-specific.yml")
+        output = self.call_shell_command("tpv", "lint", tpv_config)
+        self.assertTrue(
+            "lint successful" in output,
+            f"Expected nested resubmit handlers to lint successfully but output was: {output}",
+        )
+
     def test_lint_syntax_error(self):
         tpv_config = os.path.join(os.path.dirname(__file__), "fixtures/mapping-syntax-error.yml")
         output = self.call_shell_command("tpv", "lint", tpv_config)

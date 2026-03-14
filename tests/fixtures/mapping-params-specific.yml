@@ -32,6 +32,12 @@ tools:
       int_value: 1010
     env:
       JAVA_MEM: 42
+  marvin:
+    resubmit:
+      with_more_mem_on_failure:
+        condition: memory_limit_reached and attempt <= 3
+        destination: tpv_dispatcher
+        delay: attempt * 30
 
 destinations:
   local:
