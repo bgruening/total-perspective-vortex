@@ -1,3 +1,11 @@
+3.2.0 - Mar 14, 2025. (sha 28c26ef78dacdfc6e74ca141837c7b7d82b7da28)
+--------------------------------------------------------------------
+* Allow accepting or rejecting based on ``tool_type`` by @mvdbeek (PR #167)
+* Uplift to uv + py310 and parallelize tests by @nuwang (PR #185)
+* Update fastapi requirement from <0.119 to <0.121 by @dependabot[bot] (PR #179)
+* Add explain flag and merged config dump by @nuwang (PR #184)
+* Resubmit lint fix by @abretaud (PR #187)
+
 3.1.3 - Dec 5, 2025. (sha 88bee97ea678245f38e9aac6a6d9860a2c83132a)
 --------------------------------------------------------------------
 * Bump setuptools minimum version to 77.0.0 by @nsoranzo (PR #178)
