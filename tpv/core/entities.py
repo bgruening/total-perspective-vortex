@@ -486,11 +486,6 @@ class Entity(BaseModel):
         kwargs.setdefault("by_alias", True)
         return super().model_dump(**kwargs)
 
-    def dict(self, **kwargs: Any) -> dict[str, Any]:
-        # by_alias is set to True to use the field aliases during serialization
-        kwargs.setdefault("by_alias", True)
-        return super().dict(**kwargs)
-
 
 class Rule(Entity):
     rule_counter: ClassVar[int] = 0
