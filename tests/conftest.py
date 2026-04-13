@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 import pytest
 
 from tpv.rules import gateway
@@ -9,6 +12,10 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
+    # Give each xdist worker its own mypy cache to avoid concurrent cache corruption
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker_id:
+        os.environ["MYPY_CACHE_DIR"] = os.path.join(tempfile.gettempdir(), f".mypy_cache_{worker_id}")
 
 
 def pytest_collection_modifyitems(config, items):
