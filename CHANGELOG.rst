@@ -1,4 +1,8 @@
-3.2.0 - Mar 14, 2025. (sha 28c26ef78dacdfc6e74ca141837c7b7d82b7da28)
+3.2.1 - Apr 13, 2026. (sha c5c317f8613ca66446af38eba4e865c20d62ac45)
+--------------------------------------------------------------------
+* Replace deprecated pydantic class Config with ConfigDict by @mvdbeek (PR #191)
+
+3.2.0 - Mar 14, 2026. (sha 28c26ef78dacdfc6e74ca141837c7b7d82b7da28)
 --------------------------------------------------------------------
 * Allow accepting or rejecting based on ``tool_type`` by @mvdbeek (PR #167)
 * Uplift to uv + py310 and parallelize tests by @nuwang (PR #185)
