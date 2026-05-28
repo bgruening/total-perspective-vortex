@@ -6,13 +6,13 @@ on:
     tags:
       - '*'
 jobs:
-  build-n-publish:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+  build_packages:
+    name: Build Python 🐍 distributions 📦
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
@@ -24,6 +24,23 @@ jobs:
         python3 setup.py sdist bdist_wheel
         uvx twine check dist/*
         ls -l dist
+    - uses: actions/upload-artifact@v7
+      with:
+        name: packages
+        path: dist/
+
+  publish:
+    name: Publish distribution 📦 to PyPI
+    needs: [build_packages]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: packages
+        path: dist
     - name: Publish distribution 📦 to PyPI
-      if: github.event_name == 'release'
       uses: pypa/gh-action-pypi-publish@release/v1
