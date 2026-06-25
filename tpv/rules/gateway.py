@@ -119,13 +119,13 @@ def map_tool_to_destination(
     referrer_id = referrer.id if referrer else None
     destination_mapper = lock_and_load_mapper(app, referrer_id or "tpv_dispatcher", resolved_tpv_configs)
     explain_on_failure = bool(referrer.params.get("tpv_explain_on_failure", False)) if referrer else False
-    auto_collect = explain_collector is None and explain_on_failure
-    active_collector = explain_collector or (ExplainCollector() if auto_collect else None)
-    if active_collector:
+    log_on_failure = explain_collector is None and explain_on_failure
+    collector = explain_collector or (ExplainCollector() if log_on_failure else None)
+    if collector:
         configs_list = listify(resolved_tpv_configs)
         for config_source in configs_list:
             source_name = config_source if isinstance(config_source, str) else "<inline config>"
-            active_collector.add_step(ExplainPhase.CONFIG_LOADING, f"Loaded config: {source_name}")
+            collector.add_step(ExplainPhase.CONFIG_LOADING, f"Loaded config: {source_name}")
     try:
         return destination_mapper.map_to_destination(
             app,
@@ -135,9 +135,9 @@ def map_tool_to_destination(
             job_wrapper,
             resource_params,
             workflow_invocation_uuid,
-            explain_collector=active_collector,
+            explain_collector=collector,
         )
     except JobMappingException:
-        if auto_collect:
-            log.warning("Job mapping failed. TPV scheduling trace:\n%s", active_collector.render())
+        if log_on_failure:
+            log.warning("Job mapping failed. TPV scheduling trace:\n%s", collector.render())
         raise
