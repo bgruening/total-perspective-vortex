@@ -139,5 +139,6 @@ def map_tool_to_destination(
         )
     except JobMappingException:
         if log_on_failure:
+            assert collector is not None
             log.warning("Job mapping failed. TPV scheduling trace:\n%s", collector.render())
         raise
