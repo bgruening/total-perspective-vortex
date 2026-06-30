@@ -3,11 +3,14 @@ import unittest
 from unittest.mock import MagicMock
 
 import yaml
+from galaxy.jobs import JobDestination
 from galaxy.jobs.mapper import JobMappingException
 
 from tpv.commands.dryrunner import TPVDryRunner
+from tpv.commands.test import mock_galaxy
 from tpv.core.entities import SchedulingTags
 from tpv.core.explain import ExplainCollector, ExplainPhase
+from tpv.rules import gateway
 
 
 class TestExplainCollectorUnit(unittest.TestCase):
@@ -496,3 +499,59 @@ class TestDryRunExplain(unittest.TestCase):
             tpv_confs=[self._fixture_path("mapping-basic.yml")],
         )
         self.assertIsNone(runner.tool)
+
+
+
+class TestGatewayExplainOnFailure(unittest.TestCase):
+    """Tests for the tpv_explain_on_failure gateway config option."""
+
+    @staticmethod
+    def _fixture_path(name):
+        return os.path.join(os.path.dirname(__file__), f"fixtures/{name}")
+
+    def _call_gateway(self, tool_id, referrer=None, explain_collector=None):
+        gateway.ACTIVE_DESTINATION_MAPPERS = {}
+        app = mock_galaxy.App(job_conf=self._fixture_path("job_conf.yml"))
+        tool = mock_galaxy.Tool(tool_id)
+        job = mock_galaxy.Job()
+        user = mock_galaxy.User("gargravarr", "fairycake@vortex.org")
+        return gateway.map_tool_to_destination(
+            app, job, tool, user,
+            referrer=referrer,
+            tpv_config_files=[self._fixture_path("mapping-basic.yml")],
+            explain_collector=explain_collector,
+        )
+
+    def test_no_log_when_param_not_set(self):
+        """No warning is logged on failure when tpv_explain_on_failure is not configured."""
+        with self.assertNoLogs("tpv.rules.gateway", level="WARNING"):
+            with self.assertRaises(JobMappingException):
+                self._call_gateway("unschedulable_tool")
+
+    def test_logs_trace_on_mapping_failure(self):
+        """A WARNING containing the scheduling trace is logged when tpv_explain_on_failure=true and mapping fails."""
+        referrer = JobDestination(id="tpv_dispatcher", params={"tpv_explain_on_failure": True})
+        with self.assertLogs("tpv.rules.gateway", level="WARNING") as cm:
+            with self.assertRaises(JobMappingException):
+                self._call_gateway("unschedulable_tool", referrer=referrer)
+        self.assertEqual(len(cm.records), 1)
+        trace = cm.records[0].getMessage()
+        self.assertIn("TPV SCHEDULING DECISION TRACE", trace)
+        self.assertIn("REJECTED", trace)
+        self.assertIn("tag mismatch", trace)
+        self.assertIn("No destinations", trace)
+
+    def test_no_log_on_successful_mapping(self):
+        """No warning is logged when tpv_explain_on_failure=true but mapping succeeds."""
+        referrer = JobDestination(id="tpv_dispatcher", params={"tpv_explain_on_failure": True})
+        with self.assertNoLogs("tpv.rules.gateway", level="WARNING"):
+            destination = self._call_gateway("bwa", referrer=referrer)
+        self.assertIsNotNone(destination)
+
+    def test_explicit_collector_not_logged_by_gateway(self):
+        """When an explicit explain_collector is passed (dry-run path), the gateway does not log on failure."""
+        collector = ExplainCollector()
+        with self.assertNoLogs("tpv.rules.gateway", level="WARNING"):
+            with self.assertRaises(JobMappingException):
+                self._call_gateway("unschedulable_tool", explain_collector=collector)
+        self.assertTrue(len(collector.steps) > 0)

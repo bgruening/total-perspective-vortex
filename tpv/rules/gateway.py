@@ -6,6 +6,7 @@ from typing import Any, cast
 
 from galaxy.app import UniverseApplication
 from galaxy.jobs import JobDestination, JobWrapper
+from galaxy.jobs.mapper import JobMappingException
 from galaxy.model import Job
 from galaxy.model import User as GalaxyUser
 from galaxy.tools import Tool as GalaxyTool
@@ -117,18 +118,27 @@ def map_tool_to_destination(
         raise ValueError("One of tpv_configs or tpv_config_files must be specified in execution environment.")
     referrer_id = referrer.id if referrer else None
     destination_mapper = lock_and_load_mapper(app, referrer_id or "tpv_dispatcher", resolved_tpv_configs)
-    if explain_collector:
+    explain_on_failure = bool(referrer.params.get("tpv_explain_on_failure", False)) if referrer else False
+    log_on_failure = explain_collector is None and explain_on_failure
+    collector = explain_collector or (ExplainCollector() if log_on_failure else None)
+    if collector:
         configs_list = listify(resolved_tpv_configs)
         for config_source in configs_list:
             source_name = config_source if isinstance(config_source, str) else "<inline config>"
-            explain_collector.add_step(ExplainPhase.CONFIG_LOADING, f"Loaded config: {source_name}")
-    return destination_mapper.map_to_destination(
-        app,
-        tool,
-        user,
-        job,
-        job_wrapper,
-        resource_params,
-        workflow_invocation_uuid,
-        explain_collector=explain_collector,
-    )
+            collector.add_step(ExplainPhase.CONFIG_LOADING, f"Loaded config: {source_name}")
+    try:
+        return destination_mapper.map_to_destination(
+            app,
+            tool,
+            user,
+            job,
+            job_wrapper,
+            resource_params,
+            workflow_invocation_uuid,
+            explain_collector=collector,
+        )
+    except JobMappingException:
+        if log_on_failure:
+            assert collector is not None
+            log.warning("Job mapping failed. TPV scheduling trace:\n%s", collector.render())
+        raise

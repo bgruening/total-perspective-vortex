@@ -167,4 +167,5 @@ def get_dataset_attributes(
             "size": get_dataset_size(i.dataset.dataset),
         }
         for i in datasets or {}
+        if i.dataset
     }
