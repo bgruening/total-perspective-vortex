@@ -8,3 +8,6 @@ build/
 *.pyc
 activate.sh
 __pycache__
+node_modules/
+site/dist/
+.astro/
