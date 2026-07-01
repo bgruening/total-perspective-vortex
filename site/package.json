@@ -1,0 +1,16 @@
+{
+  "name": "tpv-overview-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "test": "node tests/site-content.test.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.0.4",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {}
+}
